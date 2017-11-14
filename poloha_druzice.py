@@ -12,7 +12,7 @@ def fvypocet_poloha(value, Dt):
 ##    print float(sprava[1].split()[3])
 ##    E = M
     a = M
-    b = 1
+    b = 9999.0
 
     while round(a,5) != round(b,5):
         E0= a - ((a-value[9] * math.sin(a) - M)/(1 - value[9] * math.cos(a)))
@@ -22,7 +22,7 @@ def fvypocet_poloha(value, Dt):
         b = E0
 ##        print a, b
 
-    cosv = (math.cos(E1)- value[9]) / (1-value[9] * math.cos(E1))
+    cosv = (math.cos(E1) - value[9]) / (1-value[9] * math.cos(E1))
     if E1<0:
         E1 = (2*pi)+E1
     if E1>pi:
@@ -68,4 +68,4 @@ def fvypocet_poloha(value, Dt):
 ##    pole_XYZ.append(Y)
 ##    pole_XYZ.append(Z)
 
-    return X, Y, Z
+    return [X, Y, Z]

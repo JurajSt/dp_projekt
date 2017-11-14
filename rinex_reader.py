@@ -46,7 +46,6 @@ def rinexnav(fn, ofn=None):
         for l in f:
             # format I2 http://gage.upc.edu/sites/default/files/gLAB/HTML/GPS_Navigation_Rinex_v2.11.html
             sv.append(int(l[:2]))
-            print sv
             # format I2
             year = int(l[3:5])
             if 80 <= year <= 99:
@@ -80,7 +79,6 @@ def rinexnav(fn, ofn=None):
     lista = [float(i) for i in raws.split(' ') if len(i) != 0]
     sat_info = np.array(lista)
     sat_info = sat_info.reshape(len(lista) / 29, 29)
-    print sat_info
     nav = xarray.DataArray(data=np.concatenate((np.atleast_2d(sv).T, sat_info), axis=1),
                            coords={'t': epoch,
                                    'data': ['sv', 'SVclockBias', 'SVclockDrift', 'SVclockDriftRate', 'IODE',
@@ -117,7 +115,7 @@ def rinexobs(fn, ofn=None):
     # open file, get header info, possibly speed up reading data with a premade h5 file
     fn = Path(fn).expanduser()
     with fn.open('r') as f:
-        tic = time()
+        #tic = time()
         lines = f.read().splitlines(True)
         header, version, headlines, headlength, obstimes, sats, svset, numallsvs, numsvs = scan(lines)
         print('{} is a RINEX {} file, {} kB.'.format(fn, version, fn.stat().st_size // 1000))
@@ -126,7 +124,7 @@ def rinexobs(fn, ofn=None):
         else:
             data = processBlocks(lines, header, obstimes, svset, headlines, headlength, sats, numallsvs, numsvs)
 
-        print("finished in {:.2f} seconds".format(time() - tic))
+        #print("finished in {:.2f} seconds".format(time() - tic))
 
     # write an h5 file if specified
     if ofn:
