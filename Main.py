@@ -9,6 +9,8 @@ from input_data import *
 import ogr
 import azi_ele_coor as aec
 import os
+import test
+
 
 tic = time.time()
 
@@ -42,8 +44,8 @@ for nf in navigfiles:
 
         #print 'nav time',len(navtime),'nav data', len(navvalues), 'sv', len(sv)
         #print 'obs time',len(obstime),'obs data', len(obsvalues)
-        cursor.execute("DROP TABLE IF EXISTS ganp_line")
-        cursor.execute("CREATE TABLE ganp_line (id INT NOT NULL, svname CHAR (4), azimuth REAL, azimuth1 REAL, geom GEOMETRY, PRIMARY KEY (ID))")
+        cursor.execute("DROP TABLE IF EXISTS hofn_line")
+        cursor.execute("CREATE TABLE hofn_line (id INT NOT NULL, svname CHAR (4), azimuth REAL, azimuth1 REAL, elevangle REAL, geom GEOMETRY, PRIMARY KEY (ID))")
 
         cursor.execute("DROP TABLE IF EXISTS " + nf[:8])
         cursor.execute("CREATE TABLE "+ nf[:8] +"(id INT NOT NULL, svname INT, datetime BIGINT, azimuth1 REAL, azimuth REAL, elevangle REAL,l1 "
@@ -86,16 +88,19 @@ for nf in navigfiles:
                         if Dt < platnos_spravy:
                             point = ogr.Geometry(ogr.wkbPoint)
                             sattelite = poloha_druzice.fvypocet_poloha(navvalues[i], Dt)       # vypocet polohy druzice
-                            point.AddPoint(sattelite[0], sattelite[1], sattelite[1])
-                            wkt_xyz = point.ExportToWkt()
-                            latlonh = aec.fXYZ_to_LatLonH(sattelite[0], sattelite[1], sattelite[1])
+                            point.AddPoint(sattelite[0], sattelite[1], sattelite[2])
+                            wkt_xyz = point.ExportToWkt()           # wgs84 xyz
+
+                            latlonh = aec.fXYZ_to_LatLonH(sattelite[0], sattelite[1], sattelite[2])
                             point.AddPoint(latlonh[1], latlonh[0], latlonh[2])
-                            wkt_latlonh = point.ExportToWkt()
+                            wkt_latlonh = point.ExportToWkt()       # wgs84 lat lon h
+
                             coor2 = aec.fwgs4326towgs3857(latlonh[0], latlonh[1])
                             point.AddPoint(coor2[0], coor2[1])
-                            wkt_webmercator = point.ExportToWkt()
-                            angles = aec.fComputeAziEle(ganp, sattelite)
-                            azimuth = aec.fCalculateAzimuth(ganp,[coor2[0], coor2[1]])
+                            wkt_webmercator = point.ExportToWkt()   # wgs84 web mercator xyz
+
+                            angles = aec.fComputeAziEle(hofn, [sattelite[0],sattelite[1], sattelite[2]])
+                            azimuth = aec.fCalculateAzimuth(hofn,[coor2[0], coor2[1]])
                             cursor.execute('INSERT INTO '+ nf[:8] +' (id, svname, datetime, azimuth1, azimuth, elevangle,' 
                                            'l1, l2, s1, s2, geom_xyz, geom_webmercator, geom_latlonh)' 
                                            'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_GeometryFromText(%s),' 
@@ -104,16 +109,19 @@ for nf in navigfiles:
                                              obsvalues[j][k][indexL2],obsvalues[j][k][indexS1], obsvalues[j][k][indexS2],
                                              wkt_xyz, wkt_webmercator, wkt_latlonh))
                             line = ogr.Geometry(ogr.wkbLineString)
-                            line.AddPoint(20.3229313081, 49.0347107664)
-                            line.AddPoint(latlonh[1], latlonh[0])
+                            line.AddPoint(-1691824.83965334, 9417966.19245271)
+                            line.AddPoint(coor2[0], coor2[1])
                             wkt_line = line.ExportToWkt()
-                            cursor.execute('INSERT INTO ganp_line (id, svname, azimuth, azimuth1, geom) VALUES (%s, %s, %s, %s, ST_GeometryFromText(%s))',
-                                (id, obssv, angles[0], azimuth, wkt_line))
+                            cursor.execute('INSERT INTO hofn_line (id, svname, azimuth1, azimuth, elevangle, geom) '
+                                           'VALUES (%s, %s, %s, %s, %s, ST_GeometryFromText(%s))',
+                                (id, obssv,  azimuth, angles[0], angles[1], wkt_line))
                             id = id+1
                             break
                         break
         print("finished in {:.2f} seconds".format(time.time() - tic))
+        t = test.fTest(nf[:8])
         break
+
 
 
 

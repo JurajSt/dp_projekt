@@ -59,13 +59,13 @@ for row in stationrows:
         elif uhol in range(272,359):
             a = -1*((m.sin(m.radians(uhol-270)) * r) / m.sin(m.radians(90)))
             b = (m.sin(m.radians(90-(uhol-270))) * r) / m.sin(m.radians(90))
-        x = stationcoor[0] + b      #coor2[0] + b
-        y = stationcoor[1] + a      #coor2[1] + a
+        x = coor2[0] + b    #stationcoor[0] + b      #
+        y = coor2[1] + a    #stationcoor[1] + a      #
         azimuth = aec.fCalculateAzimuth([coor2[0], coor2[1]], [x, y])
         angle = aec.fComputeAziEle(stationcoor, [stationcoor[0]+b, stationcoor[1]+a, stationcoor[2]])
-        blh = aec.fXYZ_to_LatLonH(stationcoor[0]+b, stationcoor[1]+a, stationcoor[2])
+        #blh = aec.fXYZ_to_LatLonH(stationcoor[0]+b, stationcoor[1]+a, stationcoor[2])
         point = ogr.Geometry(ogr.wkbPoint)
-        point.AddPoint(blh[1], blh[0], blh[2])
+        point.AddPoint(x, y)
         wkt = point.ExportToWkt()
         cursor.execute('INSERT INTO kruh (id, stname, azimuth, azimuth1, geom) VALUES (%s, %s, %s, %s, ST_GeometryFromText(%s))',
                        (id, stname, azimuth, angle[0], wkt))

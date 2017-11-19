@@ -78,14 +78,14 @@ def rinexnav(fn, ofn=None):
 
     lista = [float(i) for i in raws.split(' ') if len(i) != 0]
     sat_info = np.array(lista)
-    sat_info = sat_info.reshape(len(lista) / 29, 29)
+    sat_info = sat_info.reshape(len(lista) / 28, 28)
     nav = xarray.DataArray(data=np.concatenate((np.atleast_2d(sv).T, sat_info), axis=1),
                            coords={'t': epoch,
                                    'data': ['sv', 'SVclockBias', 'SVclockDrift', 'SVclockDriftRate', 'IODE',
                                             'Crs', 'DeltaN', 'M0', 'Cuc', 'Eccentricity', 'Cus', 'sqrtA', 'TimeEph',
                                             'Cic', 'OMEGA', 'CIS', 'Io', 'Crc', 'omega', 'OMEGA DOT', 'IDOT',
                                             'CodesL2', 'GPSWeek', 'L2Pflag', 'SVacc', 'SVhealth', 'TGD', 'IODC',
-                                            'TransTime', 'FitIntvl']},
+                                            'TransTime']},    #, 'FitIntvl'
                            dims=['t', 'data'])
 
     if ofn:
