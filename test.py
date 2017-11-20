@@ -17,13 +17,13 @@ cursor = connection.cursor()
 def fTest(tablename):
     cursor.execute('SELECT svname, COUNT(svname) FROM %s WHERE azimuth > 170 and azimuth < 200 and '
                    'elevangle > 5 and elevangle < 30 GROUP BY svname' % tablename)
-    rows = cursor.fetchall()
-    for row in rows:            # kontrolujem pocet meranich zaznamov
+    count_rows = cursor.fetchall()
+    for row in count_rows:            # kontrolujem pocet meranich zaznamov
         if row[1] < 70:
             continue
         sv = row[0]
-        cursor.execute('SELECT s1, s2, elevangle, azimuth, datetime FROM hofn2740 WHERE svname = %s and azimuth > 170 and azimuth < 200 and '
-                       'elevangle > 5 and elevangle < 30' % row[0])
+        cursor.execute('SELECT s1, s2, elevangle, azimuth, datetime FROM '+ tablename +' WHERE svname = '+ str(row[0]) +' and '
+                       'azimuth > 170 and azimuth < 200 and elevangle > 5 and elevangle < 30')
         rows = cursor.fetchall()
 
         N = len(rows)
@@ -67,7 +67,7 @@ def fTest(tablename):
         plt.plot(x, residuals2, 'b+')
         plt.subplot(2, 1, 2)
         plt.plot(vyska_odrazec, pgram)
-        #plt.show()
+        plt.show()
 
         # print pgram
         workbook = xls.Workbook("D:\diplomka\_vystup_"+tablename+".xlsx")
@@ -83,14 +83,14 @@ def fTest(tablename):
         worksheet.write(0, 6, "AZIMUTH")
         worksheet.write(0, 7, "SIN_ELEV")
         worksheet.write(0, 8, "TIME")"""
-        for i in range(len(SNR1)):
+        #for i in range(len(SNR1)):
 
-            """worksheet.write(i + 1, 2, residuals1[i])
-worksheet.write(i + 1, 3, SNR2[i])
-worksheet.write(i + 1, 4, modelSNR2[i])
-worksheet.write(i + 1, 5, residuals2[i])
-worksheet.write(i + 1, 6, azimuth[i])
-worksheet.write(i + 1, 7, sin[i])
-worksheet.write(i + 1, 8, timetext[i])"""
+        """worksheet.write(i + 1, 2, residuals1[i])
+        worksheet.write(i + 1, 3, SNR2[i])
+        worksheet.write(i + 1, 4, modelSNR2[i])
+        worksheet.write(i + 1, 5, residuals2[i])
+        worksheet.write(i + 1, 6, azimuth[i])
+        worksheet.write(i + 1, 7, sin[i])
+        worksheet.write(i + 1, 8, timetext[i])"""
 
     workbook.close()
