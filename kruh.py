@@ -19,7 +19,7 @@ r = 100 # polomer kruznice v metroch
 
 # vytvorenie tabulky pre body azimutu v epsg:3857 wgs84 web mercator
 cursor.execute('DROP TABLE IF EXISTS kruh')
-cursor.execute('CREATE TABLE  kruh (id INT NOT NULL, stname CHAR (4), azimuth REAL, azimuth1 REAL, geom GEOMETRY, PRIMARY KEY (id))')
+cursor.execute('CREATE TABLE  kruh (id INT NOT NULL, stname CHAR (4), azimuth REAL, azimuth1 REAL, geom GEOMETRY, geom_xyz GEOMETRY, PRIMARY KEY (id))')
 # vytvorenie tabulky pre liniu kruhu v epsg:3857 wgs84 web mercator
 cursor.execute('DROP TABLE IF EXISTS kruh_line')
 cursor.execute('CREATE TABLE  kruh_line (id INT NOT NULL, stname CHAR (4), geom GEOMETRY, PRIMARY KEY (id))')
@@ -61,14 +61,19 @@ for row in stationrows:
             b = (m.sin(m.radians(90-(uhol-270))) * r) / m.sin(m.radians(90))
         x = coor2[0] + b    #stationcoor[0] + b      #
         y = coor2[1] + a    #stationcoor[1] + a      #
+        xx = stationcoor[0] + b      #
+        yy = stationcoor[1] + a      #
         azimuth = aec.fCalculateAzimuth([coor2[0], coor2[1]], [x, y])
-        angle = aec.fComputeAziEle(stationcoor, [stationcoor[0]+b, stationcoor[1]+a, stationcoor[2]])
+        angle = aec.fComputeAziEle(stationcoor, [stationcoor[0]+b, stationcoor[1]+a, stationcoor[2]+100])
         #blh = aec.fXYZ_to_LatLonH(stationcoor[0]+b, stationcoor[1]+a, stationcoor[2])
         point = ogr.Geometry(ogr.wkbPoint)
         point.AddPoint(x, y)
         wkt = point.ExportToWkt()
-        cursor.execute('INSERT INTO kruh (id, stname, azimuth, azimuth1, geom) VALUES (%s, %s, %s, %s, ST_GeometryFromText(%s))',
-                       (id, stname, azimuth, angle[0], wkt))
+        point = ogr.Geometry(ogr.wkbPoint)
+        point.AddPoint(xx, yy)
+        wkt_xyz = point.ExportToWkt()
+        cursor.execute('INSERT INTO kruh (id, stname, azimuth, azimuth1, geom, geom_xyz) VALUES (%s, %s, %s, %s, ST_GeometryFromText(%s), ST_GeometryFromText(%s))',
+                       (id, stname, azimuth, angle[0], wkt, wkt_xyz))
         id = id +1
         uhol = uhol + krok
 id = 0

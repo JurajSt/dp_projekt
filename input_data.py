@@ -5,8 +5,8 @@ password = 'sql'
 database = 'dp'
 DB = "host=" + hostname + " user=" + username + " password=" + password + " dbname=" + database
 
-rinexObspath = 'data/test/obs/'                  #data/ganp3060.16o'              # demo.10o'
-rinexNavpath = 'data/test/navig/'                  # demo.10n
+rinexObspath = 'data/bordel/test/obs/'                  #data/ganp3060.16o'              # demo.10o'
+rinexNavpath = 'data/bordel/test/navig/'                  # demo.10n
 
 # station
 ganp = [3929181.851, 1455236.510, 4793653.699]

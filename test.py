@@ -1,96 +1,80 @@
-import psycopg2
-import xlsxwriter as xls
+# -*- coding: utf-8 -*-
 import scipy.signal as signal
 import matplotlib.pyplot as plt
 from input_data import *
+import psycopg2
 import model
-import copy_srnestimate
 import numpy as np
-import math as m
-import time
-#import pyAstronomy
+import PreparingData
 
 connection = psycopg2.connect(DB)  # pripoenie k db
 connection.autocommit = True
 cursor = connection.cursor()
 
-def fTest(tablename):
-    cursor.execute('SELECT svname, COUNT(svname) FROM %s WHERE azimuth > 170 and azimuth < 200 and '
-                   'elevangle > 5 and elevangle < 30 GROUP BY svname' % tablename)
+def fPgram(tablename, azimin, azimax, elevmin, elevmax):
+    print tablename
+    # vyber druzice podla poctu zaznamov (zistujem len cislo druzice)
+    cursor.execute('SELECT svname, COUNT(svname) FROM ' + tablename + ' WHERE azimuth > ' + str(azimin) + ''
+                   'and azimuth < ' + str(azimax) + ' and elevangle > ' + str(elevmin) + ' and elevangle < '
+                   + str(elevmax) + ' GROUP BY svname')
+
     count_rows = cursor.fetchall()
-    for row in count_rows:            # kontrolujem pocet meranich zaznamov
-        if row[1] < 70:
+
+    for row in count_rows:  # kontrolujem pocet meranich zaznamov
+        if row[1] < 70:  # pri 30s rinex datach minimalny pocet observacii
             continue
         sv = row[0]
-        cursor.execute('SELECT s1, s2, elevangle, azimuth, datetime FROM '+ tablename +' WHERE svname = '+ str(row[0]) +' and '
-                       'azimuth > 170 and azimuth < 200 and elevangle > 5 and elevangle < 30')
-        rows = cursor.fetchall()
+        print sv
 
-        N = len(rows)
-        SNR1 = []
-        SNR2 = []
-        sin = []
-        timenum = []
-        timetext = []
-        azimuth = []
+        # priprava dat - odtranenie opakujucich, urcenie klesajuci resp stupajucich druzic, kontrola minimalneho poctu
+        # observacii
+        SNR1, SNR2, sin, timenum, timetext, azimuth, cas = \
+            PreparingData.fPreparingData(tablename, azimin, azimax, elevmin, elevmax, sv)
+
         deg = 5
 
-        for row in rows:
-            SNR1.append(m.pow(10, row[0] / 20))
-            SNR2.append(m.pow(10, row[1] / 20))
-            sin.append(m.sin(m.radians(row[2])))
-            #sin.append(row[1])
-            azimuth.append(row[3])
-            timenum.append(row[4])
-            timetext.append(time.asctime(time.localtime(row[4])))
-        SNR1 = np.array(SNR1)
-        SNR2 = np.array(SNR2)
-        x = np.array(sin)
+        for j in range(len(timenum)):
+            SNR1 = np.array(SNR1[j])   # zoznam na np.array
+            SNR2 = np.array(SNR2[j])
+            x = np.array(sin[j])
+            den_sek= np.array(cas[j])  # cas dna merania v sekundach
+            timenum = np.array(timenum[j])
 
-        normval = x.shape[0] # For normalization of the periodogram
-        #modelSNR1, residuals1 = model.modelSNR(x, SNR1, deg)
-        modelSNR2, residuals2 = model.modelSNR(x, SNR2, deg)
-        vyska_odrazec = []
-        funkcia = []
-        f = 1
-        while f <= 21:
-            funkcia.append(f)
-            f = f+1
+            #modelSNR1, residuals1 = model.modelSNR(x, SNR1, deg)    # vypocet modelu
+            modelSNR2, residuals2 = model.modelSNR(x, SNR2, deg)
 
-        for i in range(0,len(funkcia)):
-            vyska_odrazec.append(funkcia[i]*0.244)
+            vyska_odrazec = []
+            funkcia = []
+            den_hodiny = []
 
-        pgram = signal.lombscargle(timenum, residuals2, funkcia)
-        pgram = pgram.tolist()
-        print vyska_odrazec[pgram.index(max(pgram))]
-        plt.subplot(2, 1, 1)
-        plt.plot(x, residuals2, 'b+')
-        plt.subplot(2, 1, 2)
-        plt.plot(vyska_odrazec, pgram)
-        plt.show()
+            for i in range(len(cas)):
+                den_hodiny.append(den_sek[i] / 60 / 60)
 
-        # print pgram
-        workbook = xls.Workbook("D:\diplomka\_vystup_"+tablename+".xlsx")
-        worksheet = workbook.add_worksheet()
-        worksheet.write(0, 0, "svname")
-        worksheet.write(0, 1, "pgram")
-        worksheet.write(i + 1, 0, sv)
-        worksheet.write(i + 1, 1, max(pgram))
-        """worksheet.write(0, 2, "RESIDUAL SRN1")
-        worksheet.write(0, 3, "SNR2")
-        worksheet.write(0, 4, "SNR2 MODEL")
-        worksheet.write(0, 5, "RESIDUAL SRN2")
-        worksheet.write(0, 6, "AZIMUTH")
-        worksheet.write(0, 7, "SIN_ELEV")
-        worksheet.write(0, 8, "TIME")"""
-        #for i in range(len(SNR1)):
+            f = 1
+            while f <= 21:
+                funkcia.append(f)
+                f = f+1
 
-        """worksheet.write(i + 1, 2, residuals1[i])
-        worksheet.write(i + 1, 3, SNR2[i])
-        worksheet.write(i + 1, 4, modelSNR2[i])
-        worksheet.write(i + 1, 5, residuals2[i])
-        worksheet.write(i + 1, 6, azimuth[i])
-        worksheet.write(i + 1, 7, sin[i])
-        worksheet.write(i + 1, 8, timetext[i])"""
+            for i in range(0,len(funkcia)):
+                vyska_odrazec.append(funkcia[i]*0.244)
 
-    workbook.close()
+            pgram = signal.lombscargle(timenum, residuals2, funkcia)  # vypocet periodogramu
+
+            plt.subplot(2, 1, 1)
+            plt.plot(x, residuals2)
+            #plt.show()
+            plt.subplot(2, 1, 2)
+            plt.plot(vyska_odrazec, pgram)
+            plt.show()
+
+azimin = 170
+azimax = 200
+elevmin = 5
+elevmax = 30
+i = 2740
+
+#t = fPgram('hofn2880', azimin, azimax, elevmin, elevmax)
+while i <= 2880:
+    tablename = 'hofn' + str(i)
+    t = fPgram(tablename, azimin, azimax, elevmin, elevmax)
+    i = i+10

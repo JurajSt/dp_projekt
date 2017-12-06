@@ -59,6 +59,8 @@ def rinexnav(fn, ofn=None):
                                   minute=int(l[15:17]),
                                   second=int(l[17:20]),  # python reads second and fraction in parts
                                   microsecond=int(l[21]) * 100000))
+
+
             """
             now get the data as one big long string per SV
             """
@@ -74,10 +76,12 @@ def rinexnav(fn, ofn=None):
     raws = raws.replace('-', ' -')
     raws = raws.replace('m', '-')
     raws = re.sub(r'\n', r' ', raws)
+    #print raws
 
 
     lista = [float(i) for i in raws.split(' ') if len(i) != 0]
     sat_info = np.array(lista)
+    #print sat_info
     sat_info = sat_info.reshape(len(lista) / 28, 28)
     nav = xarray.DataArray(data=np.concatenate((np.atleast_2d(sv).T, sat_info), axis=1),
                            coords={'t': epoch,
@@ -176,6 +180,8 @@ def scan(L):
     svset = set()
     # %%
     a = 1               # v GANP sa nachadza po hodine komentar
+    row = 1 + (header['# / TYPES OF OBSERV'][0] - 1) // 5  # number of rows observed values
+    print row, len(L), len(L)/row
     while i < len(L):
         if "COMMENT" in L[i+a]:
             a = 0
@@ -320,3 +326,4 @@ def _block2df(block, obstypes, svnames, svnum):
 
 
     return data
+
