@@ -20,7 +20,7 @@ cursor = connection.cursor()
 
 id = 1
 navigfiles = next(os.walk(rinexNavpath))[2]   #dir is your directory path as string
-obsfiles =next(os.walk(rinexObspath))[2]
+obsfiles = next(os.walk(rinexObspath))[2]
 #print  len(navigfiles), len(obsfiles)
 
 

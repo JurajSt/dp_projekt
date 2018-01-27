@@ -1,41 +1,38 @@
 #-*- coding: utf-8 -*-
-
-from pathlib2 import Path
+from input_data import *
+import psycopg2
 import numpy as np
-from datetime import datetime
-from pandas import read_hdf
-import xarray
-from io import BytesIO
-from time import time
-import re
+import datetime
+import time
 import os
-import azi_ele_coor as aec
-import simplekml
-import xlsxwriter as xls
-# %% eph file
+import ogr
 
-c_eph = os.path.join('data/bordel/cod18221.eph')
+connection = psycopg2.connect(DB)                   # pripojenie k DB
+connection.autocommit = True
+cursor = connection.cursor()
+
+c_eph = os.path.join('data/eph/1864/igr18644.sp3')
 r_eph = open(c_eph, "r")
 eph = r_eph.readlines()
 
-sv = [];
-epoch = [];
+sv = []
+epoch = []
 raws = ''
-kml = simplekml.Kml()
+#kml = simplekml.Kml()
 #skip header, which has non-constant number of rows
 c=0
 k=1
+#m = np.zeros([32, 86400/900, 4])
 for data in eph:
     if "*" in data[0]:
         eph = eph[c:]
         break
     c=c+1
 #now read data
-workbook = xls.Workbook("D:\diplomka\eph.xls")
-worksheet = workbook.add_worksheet()
-worksheet.write(0, 0, "svname")
-worksheet.write(0, 1, "lat")
-worksheet.write(0, 2, "lon")
+points = []
+t = []
+id = 1
+matrix = np.zeros()
 for data in eph:
     if "EOF" in data:
         break
@@ -49,36 +46,28 @@ for data in eph:
         minute = int(date[5])
         second = float(date[6])
         timesec = hour*60*60 + minute*60 +second
+        t.append(timesec)
         date_row = str(hour)+":"+str(minute)+":"+str(second)
+        dat = datetime.datetime(year, month, day, hour, minute, int(second))
+        dat = time.mktime(dat.timetuple())
+        t.append(dat)
         continue
-    data_row = data.split()[:4]
+
+    data_row = data.split()
     sat = data_row[0]
-    x = float(data_row[1])*100
-    y = float(data_row[2])*100
-    z = float(data_row[3])*100
-
-    if sat[:2] == 'PG' or sat[:2] == 'PR':
-        timest = str(year) + "-" + str(month) + "-" + str(day) + "T" + str(hour) + ":" + str(minute) + ":" + \
-                   str(second) + "Z"
-        latlonh = aec.fXYZ_to_LatLonH(x,y,z)
-        xyz = aec.fwgs4326towgs3857(latlonh[0], latlonh[1])
-        worksheet.write(k, 0, data_row[0])
-        worksheet.write(k, 1,latlonh[0])
-        worksheet.write(k, 2, latlonh[1])
-        k=k+1
-        pnt = kml.newpoint(name=sat[2:], description=sat[:2]+","+str(timesec), coords=[(latlonh[1], latlonh[0])])  # lon, lat optional height
-        #pnt.timestamp.when = times
-    else:
+    if sat[:2] == 'PR':
         continue
+    x = float(data_row[1])*1000
+    y = float(data_row[2])*1000
+    z = float(data_row[3])*1000
+    clk = float(data_row[4])/1e6
+    point = [sat, timesec, x, y, z, clk]
+    points.append(point)
+    #point = ogr.Geometry(ogr.wkbPoint)
+    #point.AddPoint(x,y,z)
 
-    a = (latlonh[1],latlonh[0])
-    sv.append(a)
+    #cursor.execute("DROP TABLE IF EXISTS igr18644")
+    #cursor.execute("CREATE TABLE igr18644 (id INT NOT NULL, svname CHAR (4), datetime DOUBLE (10), geom_xyz GEOMETRY, PRIMARY KEY (ID))")
 
-
-#lin = kml.newlinestring(name="Pathway", description="A pathway in Kirstenbosch",coords=sv)
-
-
-#print kml.kml()
-
-kml.save('testkml.kml')
-workbook.close()
+    #cursor.execute('INSERT INTO igr18644 (id, svname, geom_xyz) VALUES (%s, %s, %s, ST_GeometryFromText(%s))',
+      #                          (id, ))

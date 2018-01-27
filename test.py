@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import scipy.signal as signal
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from input_data import *
 import psycopg2
 import model
 import numpy as np
 import PreparingData
+
 
 connection = psycopg2.connect(DB)  # pripoenie k db
 connection.autocommit = True
@@ -34,14 +36,23 @@ def fPgram(tablename, azimin, azimax, elevmin, elevmax):
         deg = 5
 
         for j in range(len(timenum)):
+            print timenum
             SNR1 = np.array(SNR1[j])   # zoznam na np.array
             SNR2 = np.array(SNR2[j])
             x = np.array(sin[j])
             den_sek= np.array(cas[j])  # cas dna merania v sekundach
             timenum = np.array(timenum[j])
 
+
+
             #modelSNR1, residuals1 = model.modelSNR(x, SNR1, deg)    # vypocet modelu
-            modelSNR2, residuals2 = model.modelSNR(x, SNR2, deg)
+            modelSNR2, residuals2= model.modelSNR(x, SNR2, deg)
+            #zase
+            #r = np.polyfit(x,SNR_vector, deg)
+            #f1 = np.polyval(r,x)
+            #aux = SNR_vector - f1
+            #SNR_vector - np.mean(aux)
+
 
             vyska_odrazec = []
             funkcia = []
@@ -60,11 +71,18 @@ def fPgram(tablename, azimin, azimax, elevmin, elevmax):
 
             pgram = signal.lombscargle(timenum, residuals2, funkcia)  # vypocet periodogramu
 
-            plt.subplot(2, 1, 1)
+
+            plt.subplot(3, 1, 1)
+            plt.plot(x, SNR2, x, modelSNR2, 'r')
+            plt.subplot(3, 1, 2)
             plt.plot(x, residuals2)
-            #plt.show()
-            plt.subplot(2, 1, 2)
+            plt.xlabel('sin ')
+            plt.ylabel(' SNR2 (db)')
+            #dplt.show()
+            plt.subplot(3, 1, 3)
             plt.plot(vyska_odrazec, pgram)
+            plt.xlabel('Reflector height (m)')
+            plt.ylabel('Spectral Ampl. ')
             plt.show()
 
 azimin = 170
