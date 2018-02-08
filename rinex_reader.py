@@ -12,6 +12,7 @@ import xarray
 from io import BytesIO
 from time import time
 import re
+import sys
 
 
 # %% Navigation file
@@ -117,29 +118,36 @@ def rinexobs(fn, ofn=None):
     rinexobs() returns the data in a 4-D xarray.DataArray, [Parameter,Sat #,time,data/loss of lock/signal strength]?????
     """
     # open file, get header info, possibly speed up reading data with a premade h5 file
-    fn = Path(fn).expanduser()
-    with fn.open('r') as f:
-        #tic = time()
-        lines = f.read().splitlines(True)
+    if type(fn) is list:
+        lines = fn
         header, version, headlines, headlength, obstimes, sats, svset, numallsvs, numsvs = scan(lines)
-        print('{} is a RINEX {} file, {} kB.'.format(fn, version, fn.stat().st_size // 1000))
-        if fn.suffix == '.h5':
-            data = read_hdf(fn, key='data')
-        else:
-            data = processBlocks(lines, header, obstimes, svset, headlines, headlength, sats, numallsvs, numsvs)
+        #print('{} is a RINEX {} file, {} kB.'.format(fn, version, fn.stat().st_size // 1000))
+        data = processBlocks(lines, header, obstimes, svset, headlines, headlength, sats, numallsvs, numsvs)
+    else:
+        fn = Path(fn).expanduser()
+        with fn.open('r') as f:
+            #tic = time()
+            #lines = f.readlines()
+            lines = f.read().splitlines(True)
+            header, version, headlines, headlength, obstimes, sats, svset, numallsvs, numsvs = scan(lines)
+            print('{} is a RINEX {} file, {} kB.'.format(fn, version, fn.stat().st_size // 1000))
+            if fn.suffix == '.h5':
+                data = read_hdf(fn, key='data')
+            else:
+                data = processBlocks(lines, header, obstimes, svset, headlines, headlength, sats, numallsvs, numsvs)
 
-        #print("finished in {:.2f} seconds".format(time() - tic))
+            #print("finished in {:.2f} seconds".format(time() - tic))
 
-    # write an h5 file if specified
-    if ofn:
-        ofn = Path(ofn).expanduser()
-        print('saving OBS data to', str(ofn))
-        if ofn.is_file():
-            wmode = 'a'
-        else:
-            wmode = 'w'
-            # https://github.com/pandas-dev/pandas/issues/5444
-        data.to_hdf(ofn, key='OBS', mode=wmode, complevel=6, format='table')
+        # write an h5 file if specified
+        if ofn:
+            ofn = Path(ofn).expanduser()
+            print('saving OBS data to', str(ofn))
+            if ofn.is_file():
+                wmode = 'a'
+            else:
+                wmode = 'w'
+                # https://github.com/pandas-dev/pandas/issues/5444
+            data.to_hdf(ofn, key='OBS', mode=wmode, complevel=6, format='table')
 
     return data, header
 
@@ -181,7 +189,7 @@ def scan(L):
     # %%
     a = 1               # v GANP sa nachadza po hodine komentar
     row = 1 + (header['# / TYPES OF OBSERV'][0] - 1) // 5  # number of rows observed values
-    print row, len(L), len(L)/row
+    #print row, len(L), len(L)/row
     while i < len(L):
         if "COMMENT" in L[i+a]:
             a = 0
@@ -189,7 +197,7 @@ def scan(L):
             continue
         a = 1  # v GANP sa nachadza po hodine komentar
         if len(L[i][0:26].split()) == 6:  # then its headerline
-            if int(L[i][28]) in (0, 1, 5, 6):  # CHECK EPOCH FLAG  STATUS
+            if int(L[i][28]) in (0, 1, 5, 6):  # CHECK EPOCH FLAG STATUS
                 headlines.append(i)
                 year, month, day, hour = L[i][1:3], L[i][4:6], L[i][7:9], L[i][10:12]
                 minute, second = L[i][13:15], L[i][16:26]
@@ -302,7 +310,7 @@ def _block2df(block, obstypes, svnames, svnum):
     i,j = 0,0
     txt = ""
     while i < (len(text)-1):                           # cyklus na vytvorenie chybajucich hodnôt (nahradi nulov)
-        txt = txt + svnames[i].replace("G","1").replace("R","3").replace("E","5").replace("S","7")+ " "
+        txt = txt + svnames[i].replace("G","1").replace("R","3").replace("E","5").replace("S","7").replace("C","9").replace("J","21")+ " "
         for j in range(len(text[i])/16):
             val = text[i][(16)*j:16*(j+1)].split()    # odsranuje prazdne miesta a hodnoty sily signalu
             if len(val) == 0:

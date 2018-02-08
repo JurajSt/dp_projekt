@@ -10,7 +10,7 @@ cursor = connection.cursor()
 
 def fPreparingData(tablename, azimin, azimax, elevmin, elevmax, sv):
 
-    cursor.execute('SELECT s1, s2, elevangle, azimuth, datetime FROM '+ tablename +' WHERE svname = '+ str(sv)+' '
+    cursor.execute('SELECT s1, s2, elevangle, azimuth, datetime FROM '+ tablename +' WHERE svname = ''+ str(sv)+'' ' +
                    'and azimuth > '+ str(azimin) +' and azimuth < '+ str(azimax) +' and elevangle > '+ str(elevmin) +
                    ' and elevangle < '+ str(elevmax))
     rows = cursor.fetchall()
@@ -41,6 +41,7 @@ def fPreparingData(tablename, azimin, azimax, elevmin, elevmax, sv):
             s = int(tt[0]) * 60 * 60 + int(tt[1]) * 60 + float(tt[2])
             casu.append(s)      # cas dna v sekundach
 
+    print SNR1u
     SNR1 = [[],[]]
     SNR2 = [[],[]]
     sin = [[],[]]
@@ -51,11 +52,13 @@ def fPreparingData(tablename, azimin, azimax, elevmin, elevmax, sv):
     c = 0
 
     for i in range(len(timenumu)):  # rozdelenie dat na stupania a klesanie druzice
+
         j = 1 + i
 
         while j <= (len(timenumu) - 1):
 
             if timenumu[j] - timenumu[i] == 30:
+                c = 0
                 SNR1[c].append(SNR1u[i])
                 SNR2[c].append(SNR2u[i])
                 sin[c].append(sinu[i])
@@ -66,6 +69,7 @@ def fPreparingData(tablename, azimin, azimax, elevmin, elevmax, sv):
                 break
 
             else:
+                c = 1
                 #print sinu[i] , sinu[a]
                 SNR1[c].append(SNR1u[i])
                 SNR2[c].append(SNR2u[i])
@@ -74,7 +78,7 @@ def fPreparingData(tablename, azimin, azimax, elevmin, elevmax, sv):
                 timetext[c].append(timetextu[i])
                 azimuth[c].append(azimuthu[i])
                 cas[c].append(casu[i])
-                c = c + 1
+                #c = c + 1
                 break
 
     SNR1[c].append(SNR1u[i])

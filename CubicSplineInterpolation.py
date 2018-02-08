@@ -7,10 +7,6 @@ import matplotlib.pyplot as plt
 #z = [3468.56267, 6266.923297, 8955.906822, 11488.553232, 13820.663301]
 #t = [0, 900, 1800, 2700, 3600]
 
-#x = [-13764.905816, -13686.601303]
-#y = [22307.596354, 20767.079339]
-#z = [3468.56267, 8955.906822]
-#t = [0, 1800]
 
 def fCubicSplineInterpolation(x, y, z, t):
     xs = np.arange(t[0], t[-1], 1)
@@ -18,8 +14,7 @@ def fCubicSplineInterpolation(x, y, z, t):
     cy = CubicSpline(t, y)
     cz = CubicSpline(t, z)
 
-
-    return [cx, cy, cz]
+    return [cx(xs), cy(xs), cz(xs), xs]
 
 #plt.figure(figsize=(6.5, 4))
 #plt.plot(x, y, 'o', label='data')

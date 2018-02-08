@@ -26,7 +26,7 @@ def fPgram(tablename, azimin, azimax, elevmin, elevmax):
         if row[1] < 70:  # pri 30s rinex datach minimalny pocet observacii
             continue
         sv = row[0]
-        print sv
+
 
         # priprava dat - odtranenie opakujucich, urcenie klesajuci resp stupajucich druzic, kontrola minimalneho poctu
         # observacii
@@ -36,7 +36,7 @@ def fPgram(tablename, azimin, azimax, elevmin, elevmax):
         deg = 5
 
         for j in range(len(timenum)):
-            print timenum
+            print len(timenum)
             SNR1 = np.array(SNR1[j])   # zoznam na np.array
             SNR2 = np.array(SNR2[j])
             x = np.array(sin[j])
@@ -85,14 +85,15 @@ def fPgram(tablename, azimin, azimax, elevmin, elevmax):
             plt.ylabel('Spectral Ampl. ')
             plt.show()
 
-azimin = 170
-azimax = 200
+azimin = 55
+azimax = 250
 elevmin = 5
 elevmax = 30
 i = 2740
 
-#t = fPgram('hofn2880', azimin, azimax, elevmin, elevmax)
-while i <= 2880:
-    tablename = 'hofn' + str(i)
-    t = fPgram(tablename, azimin, azimax, elevmin, elevmax)
-    i = i+10
+t = fPgram('interp18644', azimin, azimax, elevmin, elevmax)
+
+#while i <= 2880interp18644:
+#    tablename = 'hofn' + str(i)
+#    t = fPgram(tablename, azimin, azimax, elevmin, elevmax)
+#    i = i+10
