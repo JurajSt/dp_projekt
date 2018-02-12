@@ -1,26 +1,12 @@
 # -*- coding: utf-8 -*-
-import os
+import os, sys
 import datetime, time
 import numpy as np
-import ogr
 import utility
 from input_data import *
-import psycopg2
 
-import Tkinter
 
-connection = psycopg2.connect(DB)                   # pripojenie k DB
-connection.autocommit = True
-cursor = connection.cursor()
-
-cursor.execute("DROP TABLE IF EXISTS interp18644")
-cursor.execute("CREATE TABLE interp18644 (id INT NOT NULL, svname CHAR(3), datetime BIGINT, azimuth REAL, elevangle REAL, "
-               "s1 DOUBLE PRECISION, s2 DOUBLE PRECISION, geom_xyz GEOMETRY, PRIMARY KEY (ID))")
-
-path_eph = 'data/eph/1864/igr18644.sp3'
-c_obs = os.path.join('data/eph/1864/KAME2740.15o')
-r_eph = open(c_obs, "r")
-lines = r_eph.readlines()
+tic = time.time()
 
 def _obstime(fol):
     year = int(fol[0])
@@ -123,10 +109,10 @@ def processBlocks(lines, header, obstimes, ihead, headlength, sats, numallsvs, n
         bdf = _block2df(block, obstypes, sats[i], len(sats[i]))
         for t in bdf:
             t.insert(1, obstimes[i])
-        #data.append(bdf)
+        data.append(bdf)
         #print data
         #break
-    return bdf, obstypes
+    return data, obstypes
 
 def _block2df(block, obstypes, svnames, svnum):
     """
@@ -176,42 +162,45 @@ def _block2df(block, obstypes, svnames, svnum):
         data = ""
     return data2
 
+path_eph = 'data/eph/1864/igr18644.sp3'
+c_obs = os.path.join('data/eph/1864/KAME2740.15o')
+r_eph = open(c_obs, "r")
+lines = r_eph.readlines()
+r_eph.close()
+
 header, version, headlines, headlength, obstimes, sats, numallsvs, numsvs = scan(lines)
 data, obstypes = processBlocks(lines, header, obstimes, headlines, headlength, sats, numallsvs, numsvs)
 sp3 = utility.fReadSP3(path_eph)
-id = 0
 
-indexS1 = obstypes.index('S1')
-indexS2 = obstypes.index('S2')
-point = ogr.Geometry(ogr.wkbPoint)
-for d in range(len(data)):
-    if 'G' != data[d][0][0]:
-        continue
-    for i in range(len(obstimes)):
-        if data[d][0] in sats[i]:
-            lg = utility.fInterpolateSatelliteXYZ(sp3, data[d][0], i)
-            print data[d][0], i, id
+satellites = ['G01', 'G02', 'G03', 'G04', 'G05', 'G06', 'G07', 'G08', 'G09', 'G11', 'G12', 'G13', 'G14', 'G15', 'G16',
+              'G17', 'G18', 'G19', 'G20', 'G21', 'G22', 'G23', 'G24', 'G25', 'G26', 'G27', 'G28', 'G29', 'G30', 'G31',
+              'G32']
+indexS1 = obstypes.index('S1')+2
+indexS2 = obstypes.index('S2')+2
+d = 0
+for sat in satellites:
+    print "pocitam pre: " + sat
+    t = []
+    signals1 = []
+    signals2 = []
+    for d in data:
+        for i in d:             # jedna sekunda pre x druzic
+            #print i
+            sv = i[0]
+            if sat not in sv:
+                continue
+            #print sv
+            #signals = (i[indexS1], i[indexS2])
+            lg = utility.fInterpolateSatelliteXYZ(sp3, sv, i[1])
             azi, ele = utility.fComputeAziEle(kame, [lg[0], lg[1], lg[2]])
-            point.AddPoint(lg[0], lg[1], lg[2])
-            wkt = point.ExportToWkt()
-            cursor.execute('INSERT INTO interp18644 (id, svname, datetime, azimuth, elevangle, s1, s2, geom_xyz) '
-                           'VALUES (%s, %s, %s, %s, %s, %s, %s, ST_GeometryFromText(%s))',
-                           (id, data[d][0], obstimes[i], azi, ele, indexS1, indexS2, wkt))
-            id = id+1
-        else:
-            continue
+            if ele >= 5 and ele <= 30 and azi >= 60 and azi <= 100:
+                t.append(i[1])
+                #dataD.append((sv, t))
+                #dataD.append(lg)
+                #dataD.append(signals)
+                signals1.append(i[indexS1])
+                signals2.append(i[indexS2])
+                print sv, i[1]
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+print("finished in {:.2f} seconds".format(time.time() - tic))

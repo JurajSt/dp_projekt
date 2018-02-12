@@ -1,83 +1,59 @@
-import rinex_reader as reader
-import sys, os
+# -*- coding: utf-8 -*-
+import os
+import datetime, time
 import numpy as np
-import time, datetime
-import psycopg2
-from input_data import *
-from CubicSplineInterpolation import *
 import ogr
-import azi_ele_coor as aec
+import utility
+from input_data import *
+import psycopg2
 
-connection = psycopg2.connect(DB)                   # pripojenie k DB
-connection.autocommit = True
-cursor = connection.cursor()
+#connection = psycopg2.connect(DB)                   # pripojenie k DB
+#connection.autocommit = True
+#cursor = connection.cursor()
 
-cursor.execute("DROP TABLE IF EXISTS interp18644")
-cursor.execute("CREATE TABLE interp18644 (id INT NOT NULL, svname INT, datetime BIGINT, azimuth REAL, elevangle REAL, "
-               "s1 DOUBLE PRECISION, s2 DOUBLE PRECISION, geom_xyz GEOMETRY, PRIMARY KEY (ID))")
+#cursor.execute("DROP TABLE IF EXISTS interp1864")
+#cursor.execute("DROP TABLE IF EXISTS interp1864_1894")
+#cursor.execute("CREATE TABLE interp1864_1894 (id INT NOT NULL, svname CHAR(3), datetime BIGINT, geom_xyz GEOMETRY, PRIMARY KEY (ID))")
 
 id = 0
-#A = np.nan* np.empty([3600,3600,11])
-c_eph = os.path.join('data/eph/1864/KAME2740.15o')
-r_eph = open(c_eph, "r")
-eph = r_eph.readlines()
-#"""
-header = []
-# Capture header info
-for i, l in enumerate(eph):
-    header.append(l)
-    if "END OF HEADER" in l:
-        i += 1  # skip to data
-        break
-body = eph[i:]
-value = []
-j = 0
-while j < len(body):
+path_dat = 'data/eph/'#1864/ #igr18644.sp3'
+dirs = next(os.walk(path_dat))[1]
 
-    value.append(body[j])
-    if "MARKER NAME" in body[j]:
-        value.remove(value[-1])
-        value.remove(value[-1])
-        print value[0]
-        value = []
-        for k, h in enumerate(header):
-            value.insert(k, h)
-        break
-        obsdata = reader.rinexobs(value)
-        if "MARKER NUMBER" in body[j+1]:
-            j = j+6
+for dir in dirs:
+    path = path_dat+dir
+    files = next(os.walk(path))[2]
+
+    for file in files:
+        if file.split('.')[1] == 'sp3':
+            path_file = path+'/'+file
+        else:
             continue
-        j = j+5
-        continue
-    j = j+1
+        sp3 = utility.fReadSP3(path_file)
+        print path_file
 
-#for k, h in enumerate(header):
-#    value.insert(k, h)
-obsdata = reader.rinexobs(value)
-obsvalues = obsdata[0].values                           # observacne data
-obstime = obsdata[0]['t'].to_pandas()                   # [0] index aby som dostal z tuple > arrayDataset, t > pre cas
-obstype = obsdata[0]['type'].values.tolist()            # list s obs. signalmi
-osv = obsdata[0]['sv'].values.tolist()                   # zoznam indexov maxialneho poctu druzic
-indexS1 = obstype.index('S1')
-indexS2 = obstype.index('S2')
+        for d in sp3[0]:
+            sv = d[0]
+            i = 0
+            print sv, d[1][0]
+            point = ogr.Geometry(ogr.wkbPoint)
+            while i < 86400:
+                t = d[1][0]+i
+                lg = utility.fInterpolateSatelliteXYZ(sp3, sv, t)
+                i = i+1
+                point.AddPoint(lg[0], lg[1], lg[2])
+                wkt = point.ExportToWkt()
+                #cursor.execute('INSERT INTO interp1864_1894 (id, svname, datetime, geom_xyz) '
+                #               'VALUES (%s, %s, %s, ST_GeometryFromText(%s))',
+                #               (id, sv, d[1][0], wkt))
+                id = id+1
 
 
-path_eph = 'data/eph/1864/igr18644.sp3'
-path_obs ='data/eph/1864/KAME2740.15o'
 
-sp3 = utility.fReadSP3(path_eph)
-#obs = utility.fReadObservationRinex(path_obs,['G'], 1)
 
-obst = []
-for date in obstime:
-    obsdatetime = time.strptime(str(date), "%Y-%m-%d %H:%M:%S")
-    obstimesecond2 = (obsdatetime[3] * 60 * 60) + (obsdatetime[4] * 60) + obsdatetime[5]  # cas obs. dat v sekundach
-    obst.append(obssecond2)
 
-for j in range(len(obst)):
-    for k in range(len(osv)):
-        # print str(obsvalues[i][k][0])
-        if str(obsvalues[j][k][0]) == 'nan':  # kontrola prazdnych hodnot
-            break
-        obssv = int(obsvalues[j][k][0])
-        if int(str(obssv)[0]) == 1 and int(str(obssv)[1:]) == int(sv[2:]):
+
+
+
+
+
+
