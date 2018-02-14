@@ -85,13 +85,13 @@ def fPgram(tablename, azimin, azimax, elevmin, elevmax):
             plt.ylabel('Spectral Ampl. ')
             plt.show()
 
-azimin = 55
-azimax = 250
-elevmin = 5
-elevmax = 30
+azimin = str(55)
+azimax = str(250)
+elevmin = str(5)
+elevmax = str(30)
 i = 2740
 
-t = fPgram('interp18644', azimin, azimax, elevmin, elevmax)
+t = fPgram('hofn2880', azimin, azimax, elevmin, elevmax)
 
 #while i <= 2880interp18644:
 #    tablename = 'hofn' + str(i)

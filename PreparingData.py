@@ -9,8 +9,8 @@ connection.autocommit = True
 cursor = connection.cursor()
 
 def fPreparingData(tablename, azimin, azimax, elevmin, elevmax, sv):
-
-    cursor.execute('SELECT s1, s2, elevangle, azimuth, datetime FROM '+ tablename +' WHERE svname = '+"'" + sv +"'"
+    #print 'SELECT s1, s2, elevangle, azimuth, datetime FROM '+ tablename +' WHERE svname = '+"'" + str(sv) +"'" + ' and azimuth > '+ str(azimin) +' and azimuth < '+ str(azimax) +' and elevangle > '+ str(elevmin) +' and elevangle < '+ str(elevmax)
+    cursor.execute('SELECT s1, s2, elevangle, azimuth, datetime FROM '+ tablename +' WHERE svname = '+"'" + str(sv) +"'"
                    ' and azimuth > '+ str(azimin) +' and azimuth < '+ str(azimax) +' and elevangle > '+ str(elevmin) +
                    ' and elevangle < '+ str(elevmax))
     rows = cursor.fetchall()

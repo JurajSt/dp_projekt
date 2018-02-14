@@ -4,7 +4,10 @@ import datetime, time
 import numpy as np
 import utility
 from input_data import *
-
+import math as m
+import model
+import scipy.signal as signal
+import matplotlib.pyplot as plt
 
 tic = time.time()
 
@@ -53,7 +56,7 @@ def scan(L):
 
     numallsvs = []
     sats = []
-    svset = set()
+    #svset = set()
     # %%
 
     row = 1 + (header['# / TYPES OF OBSERV'][0] - 1) // 5  # number of rows observed values
@@ -112,6 +115,7 @@ def processBlocks(lines, header, obstimes, ihead, headlength, sats, numallsvs, n
         data.append(bdf)
         #print data
         #break
+    print("read rinex in {:.2f} seconds".format(time.time() - tic))
     return data, obstypes
 
 def _block2df(block, obstypes, svnames, svnum):
@@ -172,23 +176,35 @@ header, version, headlines, headlength, obstimes, sats, numallsvs, numsvs = scan
 data, obstypes = processBlocks(lines, header, obstimes, headlines, headlength, sats, numallsvs, numsvs)
 sp3 = utility.fReadSP3(path_eph)
 
-satellites = ['G01', 'G02', 'G03', 'G04', 'G05', 'G06', 'G07', 'G08', 'G09', 'G11', 'G12', 'G13', 'G14', 'G15', 'G16',
-              'G17', 'G18', 'G19', 'G20', 'G21', 'G22', 'G23', 'G24', 'G25', 'G26', 'G27', 'G28', 'G29', 'G30', 'G31',
-              'G32']
+#satellites = ['G01', 'G02', 'G03', 'G04', 'G05', 'G06', 'G07', 'G08', 'G09', 'G11', 'G12', 'G13', 'G14', 'G15', 'G16',
+#              'G17', 'G18', 'G19', 'G20', 'G21', 'G22', 'G23', 'G24', 'G25', 'G26', 'G27', 'G28', 'G29', 'G30', 'G31',
+#              'G32']
+satellites = ['G05']
+
+deg = 5
 indexS1 = obstypes.index('S1')+2
 indexS2 = obstypes.index('S2')+2
-d = 0
+#data = [[['G05', 0, 0, 0, 0, 0,0 ,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], ['G07', 0, 0, 0, 0, 0,0 ,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
+#        [['G05', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0],['G07', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0]]]
+#sats = [['G05'], ['G05']]
+
 for sat in satellites:
-    print "pocitam pre: " + sat
     t = []
     signals1 = []
     signals2 = []
-    for d in data:
+    sinele = []
+    for k, d in enumerate(data):
+        #print d
+        #print k, sats[k]
+        if sat not in sats[k]:
+            continue
+        #print "pocitam pre: " + sat, k
+
         for i in d:             # jedna sekunda pre x druzic
             #print i
             sv = i[0]
             if sat not in sv:
-                continue
+               continue
             #print sv
             #signals = (i[indexS1], i[indexS2])
             lg = utility.fInterpolateSatelliteXYZ(sp3, sv, i[1])
@@ -198,9 +214,41 @@ for sat in satellites:
                 #dataD.append((sv, t))
                 #dataD.append(lg)
                 #dataD.append(signals)
-                signals1.append(i[indexS1])
-                signals2.append(i[indexS2])
+                sinele.append(m.sin(ele))
+                signals1.append(m.pow(10,i[indexS1]/20))
+                signals2.append(m.pow(10,i[indexS2]/20))
                 print sv, i[1]
+                break
+    SNR1 = np.array(signals1)  # zoznam na np.array
+    SNR2 = np.array(signals2)
+    x = np.array(sinele)
+    #den_sek = np.array(cas[j])  # cas dna merania v sekundach
+    timenum = np.array(t)
+    vyska_odrazec = []
+    funkcia = []
+    den_hodiny = []
+    f = 1
+    while f <= 21:
+        funkcia.append(f)
+        f = f + 1
 
+    for i in range(0, len(funkcia)):
+        vyska_odrazec.append(funkcia[i] * 0.244)
+
+    modelSNR2, residuals2 = model.modelSNR(x, SNR2, deg)
+    pgram = signal.lombscargle(timenum, residuals2, funkcia)  # vypocet periodogramu
+
+    plt.subplot(3, 1, 1)
+    plt.plot(x, SNR2, x, modelSNR2, 'r')
+    plt.subplot(3, 1, 2)
+    plt.plot(x, residuals2)
+    plt.xlabel('sin ')
+    plt.ylabel(' SNR2 (db)')
+    # dplt.show()
+    plt.subplot(3, 1, 3)
+    plt.plot(vyska_odrazec, pgram)
+    plt.xlabel('Reflector height (m)')
+    plt.ylabel('Spectral Ampl. ')
+    plt.show()
 
 print("finished in {:.2f} seconds".format(time.time() - tic))
