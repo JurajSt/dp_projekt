@@ -12,7 +12,7 @@ import subprocess
 isfile = os.path.isfile
 join = os.path.join
 
-subprocess.call('set PATH=%PATH%;C:\\Program Files\\7-Zip\\', shell=False)  # for unzip
+#subprocess.call('set PATH=%PATH%;C:\\Program Files\\7-Zip\\', shell=False)  # for unzip
 
 def greg2gps(epochT, gregT):
     days = abs(epochT - gregT) / one_day
@@ -48,7 +48,7 @@ epochSeconds = 0
 epochMilliseconds = 0
 
 #start time for calculate gps week
-gregYear = 2015
+gregYear = 2016
 gregMonth = 10
 gregDay = 1
 gregHours = 0
@@ -57,7 +57,7 @@ gregSeconds = 0
 gregMilliseconds = 0
 
 #end time for calculate gps week
-EndYear = 2016
+EndYear = 2017
 EndMonth = 4
 EndDay = 30
 EndHours = 0

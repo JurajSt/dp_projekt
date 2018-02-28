@@ -1468,7 +1468,7 @@ def fReadSP3(sp3_input_path):
         cti = open(sp3_input_path, 'r')
         lines = cti.readlines()
         cti.close()
-
+    date = lines[0][3:].split()[:6]
     #get the list of satellites
     satellite_PRN_list = []
     for i in range(0, len(lines)):
@@ -1506,7 +1506,7 @@ def fReadSP3(sp3_input_path):
         positions[0].append(sat_x)
         positions[1].append(sat_y)
         positions[2].append(sat_z)
-    return positions
+    return positions, date
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
