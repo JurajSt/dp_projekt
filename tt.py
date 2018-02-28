@@ -382,7 +382,7 @@ for f in ephfiles:
             #funkcia.append(x)
             #funkcia.append(SNR2_vector_1)
 
-            #plt.subplot(2, 1, 1)
+            plt.subplot(2, 1, 1)
             plt.plot(x, SNR2_vector_1, x, modelSNR2_1, 'r')
             plt.xlabel('sin ')
             plt.ylabel('residuals (volt)')
