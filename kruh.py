@@ -3,6 +3,7 @@ from input_data import *
 import math as m
 import ogr
 import azi_ele_coor as aec
+import t3
 
 
 def fwktpoint2xyz(wkt):
@@ -11,40 +12,9 @@ def fwktpoint2xyz(wkt):
     coor = map(float, coor)
     return coor
 
-connection = psycopg2.connect(DB)                   # pripojenie k DB
-connection.autocommit = True
-cursor = connection.cursor()
-
-r = 100 # polomer kruznice v metroch
-
-# vytvorenie tabulky pre body azimutu v epsg:3857 wgs84 web mercator
-cursor.execute('DROP TABLE IF EXISTS kruh')
-cursor.execute('CREATE TABLE  kruh (id INT NOT NULL, stname CHAR (4), azimuth REAL, azimuth1 REAL, geom GEOMETRY, geom_xyz GEOMETRY, PRIMARY KEY (id))')
-# vytvorenie tabulky pre liniu kruhu v epsg:3857 wgs84 web mercator
-cursor.execute('DROP TABLE IF EXISTS kruh_line')
-cursor.execute('CREATE TABLE  kruh_line (id INT NOT NULL, stname CHAR (4), geom GEOMETRY, PRIMARY KEY (id))')
-# vytvorenie tabulky pre stanice v epsg:3857 wgs84 web mercator
-cursor.execute('DROP TABLE IF EXISTS station_webmercator')
-cursor.execute('CREATE TABLE  station_webmercator (stname CHAR (4) NOT NULL, geom GEOMETRY, PRIMARY KEY (stname))')
-
-cursor.execute('SELECT stname, ST_AsText(geom) FROM station')
-stationrows = cursor.fetchall()
-
-id = 0
-
-for row in stationrows:
-
-    stname = row[0]
-    stationcoor = fwktpoint2xyz(row[1])
-    blh = aec.fXYZ_to_LatLonH(stationcoor[0], stationcoor[1], stationcoor[2])
-    coor2 = aec.fwgs4326towgs3857(blh[0],blh[1])
-    point = ogr.Geometry(ogr.wkbPoint)
-    point.AddPoint(coor2[0], coor2[1])
-    wkt = point.ExportToWkt()
-    cursor.execute('INSERT INTO station_webmercator (stname, geom) VALUES (%s, ST_GeometryFromText(%s))', (stname, wkt))
+def kruh (sur):
     krok = 10 # krok v stupnoch po kruznici
     uhol = 0
-
     while uhol < 360:
 
         if uhol in range(0,91):
@@ -59,51 +29,86 @@ for row in stationrows:
         elif uhol in range(272,359):
             a = -1*((m.sin(m.radians(uhol-270)) * r) / m.sin(m.radians(90)))
             b = (m.sin(m.radians(90-(uhol-270))) * r) / m.sin(m.radians(90))
-        x = coor2[0] + b    #stationcoor[0] + b      #
-        y = coor2[1] + a    #stationcoor[1] + a      #
+        x = sur[0] + b    #stationcoor[0] + b      #
+        y = sur[1] + a    #stationcoor[1] + a      #
         xx = stationcoor[0] + b      #
         yy = stationcoor[1] + a      #
-        azimuth = aec.fCalculateAzimuth([coor2[0], coor2[1]], [x, y])
-        angle = aec.fComputeAziEle(stationcoor, [stationcoor[0]+b, stationcoor[1]+a, stationcoor[2]+100])
+        azimuth = aec.fCalculateAzimuth([sur[0], sur[1]], [x, y])
         #blh = aec.fXYZ_to_LatLonH(stationcoor[0]+b, stationcoor[1]+a, stationcoor[2])
         point = ogr.Geometry(ogr.wkbPoint)
         point.AddPoint(x, y)
-        wkt = point.ExportToWkt()
-        point = ogr.Geometry(ogr.wkbPoint)
-        point.AddPoint(xx, yy)
-        wkt_xyz = point.ExportToWkt()
-        cursor.execute('INSERT INTO kruh (id, stname, azimuth, azimuth1, geom, geom_xyz) VALUES (%s, %s, %s, %s, ST_GeometryFromText(%s), ST_GeometryFromText(%s))',
-                       (id, stname, azimuth, angle[0], wkt, wkt_xyz))
-        id = id +1
-        uhol = uhol + krok
-id = 0
-"""
-for strow in stationrows:
-    stname = strow[0]
-    cursor.execute("SELECT ST_AsText(geom) FROM kruh WHERE stname = '%s' ORDER BY azimuth ASC" % stname)
-    rows = cursor.fetchall()
-    line = ogr.Geometry(ogr.wkbLineString)
-    for krow in rows:
-        coor = fwktpoint2xyz(krow[0])
-        line.AddPoint(coor[0], coor[1])
-        wkt_line = line.ExportToWkt()
-    coor = fwktpoint2xyz(rows[0][0])
-    line.AddPoint(coor[0], coor[1])
-    wkt_line = line.ExportToWkt()
-    cursor.execute('INSERT INTO kruh_line (id, stname, geom) VALUES (%s, %s, ST_GeometryFromText(%s))', (id, stname, wkt_line))
-    id = id + 1
+        wkt_kruh = point.ExportToWkt()
+        cursor.execute("INSERT INTO kruh (stname, azimuth, geom) VALUES ('%s', %s, ST_GeometryFromText('%s'))" %
+                       (stname, azimuth, wkt_kruh))
 
-cursor.execute('SELECT ST_AsText(geom) FROM ganp3060_16')
-satteliterows = cursor.fetchall()
-cursor.execute('ALTER TABLE ganp3060_16 DROP COLUMN IF EXISTS geom_webmercator')
-cursor.execute('ALTER TABLE ganp3060_16 ADD COLUMN geom_webmercator GEOMETRY')
-print len(satteliterows)
-i = 0
-for row in satteliterows:
-    print i
+        uhol = uhol + krok
+
+
+connection = psycopg2.connect(DB)                   # pripojenie k DB
+connection.autocommit = True
+cursor = connection.cursor()
+
+r = 100 # polomer kruznice v metroch
+
+# vytvorenie tabulky pre body azimutu v epsg:3857 wgs84 web mercator
+cursor.execute('DROP TABLE IF EXISTS kruh')
+cursor.execute('CREATE TABLE  kruh (id INT NOT NULL, stname CHAR (4), azimuth REAL, azimuth1 REAL, geom GEOMETRY, geom_xyz GEOMETRY, PRIMARY KEY (id))')
+
+if sursystem == 'xy':
+    # vytvorenie tabulky pre stanice v epsg:3857 wgs84 web mercator
+    cursor.execute('DROP TABLE IF EXISTS stanice_webmercator')
+    cursor.execute('CREATE TABLE  stanice_webmercator (stname CHAR (4) NOT NULL, geom GEOMETRY, PRIMARY KEY (stname))')
+
+if  0 < abs(stanice[c][0]) < 180 and 0 < abs(stanice[c][1]) < 180 or sursystem == 'xyz':
+    # vytvorenie tabulky pre stanice vo wgs84
+    cursor.execute('DROP TABLE IF EXISTS stanice_xyz')
+    cursor.execute('CREATE TABLE  stanice_xyz (stname CHAR (4) NOT NULL, geom GEOMETRY, PRIMARY KEY (stname))')
+else:
+    # vytvorenie tabulky pre stanice vo wgs84
+    cursor.execute('DROP TABLE IF EXISTS stanice_blh')
+    cursor.execute('CREATE TABLE  stanice_blh (stname CHAR (4) NOT NULL, geom GEOMETRY, PRIMARY KEY (stname))')
+
+cursor.execute('SELECT stname, ST_AsText(geom) FROM station')
+stationrows = cursor.fetchall()
+
+id = 0
+
+for s in stanice:
+
+    stname = telg[4]
+    stationcoor = s[0]
     point = ogr.Geometry(ogr.wkbPoint)
-    coor = fwktpoint2xyz(row[0])
-    point.AddPoint(coor[0], coor[1])
-    wkt= point.ExportToWkt()
-    cursor.execute("UPDATE ganp3060_16 SET geom_webmercator = ST_GeometryFromText('%s')" % wkt)
-    i = i+1"""
+    if sursystem == 'xy':
+        if 0 < abs(stanice[c][0]) < 180 and 0 < abs(stanice[c][1]) < 180:
+            blh = aec.fXYZ_to_LatLonH(stationcoor[0], stationcoor[1], stationcoor[2])
+            coor2 = aec.fwgs4326towgs3857(blh[0], blh[1])
+        else:
+            coor2 = aec.fwgs4326towgs3857(s[0], s[1])
+        point.AddPoint(coor2[0], coor2[1])
+        wkt = point.ExportToWkt()
+        cursor.execute("INSERT INTO stanice_webmercator (stname, geom) VALUES ('%s', ST_GeometryFromText('%s'))"% (stname, wkt))
+        kruh(coor2)
+
+    elif sursystem == 'xyz':
+        if 0 < abs(stanice[c][0]) < 180 and 0 < abs(stanice[c][1]) < 90:
+            point.AddPoint(s[0], s[1], s[2])
+            kruh(s)
+        else:
+            xyz = aec.fLatLonH_to_XYZ(s[0], s[1], s[2])
+            point.AddPoint(xyz[0], xyz[1], xyz[2])
+        wkt = point.ExportToWkt()
+        cursor.execute("INSERT INTO stanice_xyz (stname, geom) VALUES ('%s', ST_GeometryFromText('%s'))" % (stname, wkt))
+        kruh(xyz)
+
+    else:
+        if 0 < abs(stanice[c][0]) < 180 and 0 < abs(stanice[c][1]) < 90:
+            blh = aec.fXYZ_to_LatLonH(stationcoor[0], stationcoor[1], stationcoor[2])
+            point.AddPoint(blh[0], blh[1], blh[2])
+            kruh(blh)
+        else:
+            point.AddPoint(blh[0], blh[1], blh[2])
+            kruh(s)
+        wkt = point.ExportToWkt()
+        cursor.execute("INSERT INTO stanice_blh (stname, geom) VALUES ('%s', ST_GeometryFromText('%s'))" % (stname, wkt))
+
+

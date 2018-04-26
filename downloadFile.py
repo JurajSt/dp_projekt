@@ -48,18 +48,18 @@ epochSeconds = 0
 epochMilliseconds = 0
 
 #start time for calculate gps week
-gregYear = 2016
-gregMonth = 10
-gregDay = 1
+gregYear = 2015
+gregMonth = 12
+gregDay = 12
 gregHours = 0
 gregMinutes = 0
 gregSeconds = 0
 gregMilliseconds = 0
 
 #end time for calculate gps week
-EndYear = 2017
-EndMonth = 4
-EndDay = 30
+EndYear = 2016
+EndMonth = 1
+EndDay = 25
 EndHours = 0
 EndMinutes = 0
 EndSeconds = 0

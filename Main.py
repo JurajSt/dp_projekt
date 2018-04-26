@@ -126,7 +126,7 @@ for nf in navigfiles:
                             line2.AddPoint(sattelite[0], sattelite[1])
                             wkt_line_xyz = line2.ExportToWkt()
                             cursor.execute('INSERT INTO hofn_line (id, svname, azimuth1, azimuth, elevangle, geom, geom_xyz) '
-                                           'VALUES (%s, %s, %s, %s, %s, ST_GeometryFromText(%s), ST_GeometryFromText(%s))',
+                                           'VALUES (%s, %s, %s, %s, %s, ST_GeometryFromText(%s), ST_GeometryFromText(%s))'%
                                 (id, obssv,  azimuth, angles[0], angles[1], wkt_line, wkt_line_xyz))
                             id = id+1
                             break

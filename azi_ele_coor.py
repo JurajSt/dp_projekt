@@ -19,6 +19,11 @@ def fwgs4326towgs3857(lat, lon):
 
     return x, y
 
+def fwgs3857towgs4326(x, y):
+    lon = x *  180 / 20037508.34 ;
+    lat = math.atan(math.exp(y * math.pi / 20037508.34)) * 360 / math.pi - 90;
+    return lat, lon
+
 def fLatLonH_to_XYZ(B,L,H):
 
     a=6378137.0

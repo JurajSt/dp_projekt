@@ -335,3 +335,5 @@ def _block2df(block, obstypes, svnames, svnum):
 
     return data
 
+nav_path = 'D:/diplomka/dp_projekt/data/hofn/navig/hofn2740.15n'
+navdata = rinexnav(nav_path)
