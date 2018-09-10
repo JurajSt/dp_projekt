@@ -72,6 +72,7 @@ try:
             rok = date_e[0][2:]
             obsfile = obs_path + stanice[c][4] + namefile + '.' + rok + 'o'
             if not os.path.exists(obsfile):
+                print 'ziadny observacny subor'
                 continue
             # else: continue
             r_obs = open(obsfile, "r")
@@ -144,7 +145,6 @@ try:
                             signals5.append(m.pow(10, float(i[indexS5]) / 20))
                             #print ele
                             break
-
 
                 if len(sinele) < pocet_observacii:            # filter poctu observacii
                     print "pre ", sat, " malo observacii - vypocet neprebehne", len(sinele)
@@ -308,6 +308,7 @@ try:
 
         if  len(doy_list1) == 0:
             print 'Ziadny vypocet vysky. Skontroluj data'
+            os.system("pause")
             sys.exit()
         # priemer vysok
         mean1 = np.mean(vyska1)
@@ -348,14 +349,17 @@ try:
 
         # vypocet RMSE pre jednotlive signaly
         print
-        rmse_val = reader.rmse(np.array(vyska_r1), np.array(SHMUdata[1]))
-        print("rms chyba L1 is: " + str(rmse_val))
-        rmse_val = reader.rmse(np.array(vyska_r2), np.array(SHMUdata[1]))
-        print("rms chyba L2 is: " + str(rmse_val))
-        if sat in satellites_S5:
-            rmse_val = reader.rmse(np.array(vyska_r3), np.array(SHMUdata[1]))
-            print("rms chyba L5 is: " + str(rmse_val))
-
+        try:
+            rmse_val = reader.rmse(np.array(vyska_r1), np.array(SHMUdata[1]))
+            print("rms chyba L1 is: " + str(rmse_val))
+            rmse_val = reader.rmse(np.array(vyska_r2), np.array(SHMUdata[1]))
+            print("rms chyba L2 is: " + str(rmse_val))
+            if sat in satellites_S5:
+                rmse_val = reader.rmse(np.array(vyska_r3), np.array(SHMUdata[1]))
+                print("rms chyba L5 is: " + str(rmse_val))
+        except ValueError as e:
+            print "ValueError: " + e
+            print "datum observacie nie je v datach v meranej vyske snehu"
 
         # graf pre odhadovanu vysku snehu
         plt.plot(doy_list1, vyska_r1, 'o', markersize=10, color="blue")

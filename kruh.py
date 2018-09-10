@@ -52,14 +52,14 @@ r = 100 # polomer kruznice v metroch
 
 # vytvorenie tabulky pre body azimutu v epsg:3857 wgs84 web mercator
 cursor.execute('DROP TABLE IF EXISTS kruh')
-cursor.execute('CREATE TABLE  kruh (id INT NOT NULL, stname CHAR (4), azimuth REAL, azimuth1 REAL, geom GEOMETRY, geom_xyz GEOMETRY, PRIMARY KEY (id))')
+cursor.execute('CREATE TABLE  kruh (stname CHAR (4), azimuth REAL, azimuth1 REAL, geom GEOMETRY, geom_xyz GEOMETRY)')
 
 if sursystem == 'xy':
     # vytvorenie tabulky pre stanice v epsg:3857 wgs84 web mercator
     cursor.execute('DROP TABLE IF EXISTS stanice_webmercator')
     cursor.execute('CREATE TABLE  stanice_webmercator (stname CHAR (4) NOT NULL, geom GEOMETRY, PRIMARY KEY (stname))')
 
-if  0 < abs(stanice[c][0]) < 180 and 0 < abs(stanice[c][1]) < 180 or sursystem == 'xyz':
+if suradnice_vstup == 'xyz':
     # vytvorenie tabulky pre stanice vo wgs84
     cursor.execute('DROP TABLE IF EXISTS stanice_xyz')
     cursor.execute('CREATE TABLE  stanice_xyz (stname CHAR (4) NOT NULL, geom GEOMETRY, PRIMARY KEY (stname))')
@@ -68,18 +68,15 @@ else:
     cursor.execute('DROP TABLE IF EXISTS stanice_blh')
     cursor.execute('CREATE TABLE  stanice_blh (stname CHAR (4) NOT NULL, geom GEOMETRY, PRIMARY KEY (stname))')
 
-cursor.execute('SELECT stname, ST_AsText(geom) FROM station')
-stationrows = cursor.fetchall()
+for c, s in enumerate(stanice):
 
-id = 0
 
-for s in stanice:
 
     stname = telg[4]
     stationcoor = s[0]
     point = ogr.Geometry(ogr.wkbPoint)
     if sursystem == 'xy':
-        if 0 < abs(stanice[c][0]) < 180 and 0 < abs(stanice[c][1]) < 180:
+        if suradnice_vstup == 'xyz':
             blh = aec.fXYZ_to_LatLonH(stationcoor[0], stationcoor[1], stationcoor[2])
             coor2 = aec.fwgs4326towgs3857(blh[0], blh[1])
         else:
@@ -90,7 +87,7 @@ for s in stanice:
         kruh(coor2)
 
     elif sursystem == 'xyz':
-        if 0 < abs(stanice[c][0]) < 180 and 0 < abs(stanice[c][1]) < 90:
+        if suradnice_vstup == 'blh':
             point.AddPoint(s[0], s[1], s[2])
             kruh(s)
         else:
@@ -101,7 +98,7 @@ for s in stanice:
         kruh(xyz)
 
     else:
-        if 0 < abs(stanice[c][0]) < 180 and 0 < abs(stanice[c][1]) < 90:
+        if suradnice_vstup == 'xyz':
             blh = aec.fXYZ_to_LatLonH(stationcoor[0], stationcoor[1], stationcoor[2])
             point.AddPoint(blh[0], blh[1], blh[2])
             kruh(blh)

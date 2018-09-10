@@ -4,6 +4,7 @@ import reader
 from input_data import *
 import ogr
 from azi_ele_coor import *
+import numpy as np
 
 try:
     import psycopg2
@@ -37,12 +38,12 @@ def fAnalyzaZapis(sat, sur_druzice, sur_stanice, st_nazov, ele_uhol, azimut, cas
 
     line = ogr.Geometry(ogr.wkbLineString)
     if sursystem == 'xyz' or sursystem == 'llh':
+        line.AddPoint(round(sur_stanice[0], 3), round(sur_stanice[1], 3), round(sur_stanice[2], 3))
         line.AddPoint(round(sur_druzice[0], 3), round(sur_druzice[1], 3), round(sur_druzice[2], 3))
 
     else:
         line.AddPoint(round(sur_stanice[0], 3), round(sur_stanice[1], 3))
         line.AddPoint(round(sur_druzice[0], 3), round(sur_druzice[1], 3))
-
     wkt_line = line.ExportToWkt()
 
     cursor.execute("INSERT INTO VyberDruzice (sat_cislo, st_nazov, azimut, ele_uhol, cas, geom)"
@@ -80,12 +81,12 @@ def fAnalyza():
 
             e = eph_path + f # cesta k SP3 suboru
             print
+            print e
 
             sp3, date_e = reader.fReadSP3(e)   # nacitanie presnych efemerid
             doy_eph = reader.fdayofyear(int(date_e[0]), int(date_e[1]), int(date_e[2]))  # prepocet datumu na den v roku
             dat = date(int(date_e[0]), int(date_e[1]), int(date_e[2])) # datum prveho zaznamu sp3 suboru
             # print int(date_e[0]), int(date_e[1]), int(date_e[2])
-            print dat
 
             if dat > dat_end: # kontrola ci sa datum zaznamu sa nachadza v zadanom intervale datumu
                 break
@@ -102,11 +103,15 @@ def fAnalyza():
             rok = date_e[0][2:]
             obsfile = obs_path + stanice[c][4] + namefile + '.' + rok + 'o'
             if not os.path.exists(obsfile):
+                print 'ziadny observacny subor'
                 continue
             # else: continue
             r_obs = open(obsfile, "r")
             lines = r_obs.readlines()
             r_obs.close()
+
+            print obsfile
+            print dat
 
             #parsrovanie observacnych dat
             header, version, headlines, headlength, obstimes, sats, numallsvs, numsvs, date_o = reader.scan(lines)
@@ -134,7 +139,7 @@ def fAnalyza():
                             continue
 
                         lg = reader.fInterpolateSatelliteXYZ(sp3, sv, i[1])  # vypocet lagrangeovej interpolacie
-                        azi, ele = reader.fComputeAziEle(stanice[c][0], [lg[0], lg[1], lg[2]])   # vypocet elevacneho uhla, azimutu
+                        azi, ele = fComputeAziEle(stanice[c][0], [lg[0], lg[1], lg[2]])   # vypocet elevacneho uhla, azimutu
 
                         # zobrazenie podkladovych map je v WGS 84 Web Mercator (EPSG:3857) tj. suradnice su prepocitane tiez a
                         # tym musi byt aj azimut prepocitany

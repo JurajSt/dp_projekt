@@ -2,7 +2,6 @@ import os, sys
 import datetime, time
 import numpy as np
 from numpy import *
-import utility
 from input_data import *
 import math as m
 import model
@@ -47,7 +46,8 @@ def fAnalyzaUlozenie():
 def fAnalyzaZapis(sat, sur_druzice, sur_stanice, st_nazov, ele_uhol, azimut, cas):
 
     line = ogr.Geometry(ogr.wkbLineString)
-    if sursystem == 'xyz' or sursystem == 'llh':
+    if sursystem == 'xyz' or sursystem == 'blh':
+        line.AddPoint(round(sur_stanice[0], 3), round(sur_stanice[1], 3), round(sur_stanice[2], 3))
         line.AddPoint(round(sur_druzice[0], 3), round(sur_druzice[1], 3), round(sur_druzice[2], 3))
 
     else:
@@ -110,8 +110,12 @@ def fAnalyza():
             rok = prva_obs[0][2:]
             navfile = nav_path + f.split('.')[0] + '.' + rok + 'n'
             if not os.path.exists(navfile):
+                print 'ziadne navigacne data'
                 continue
             # else: continue
+
+            print navfile
+            print dat
 
             #parsrovanie observacnych dat
             data, obstypes = reader.processBlocks(lines, header, obstimes, headlines, headlength, sats, numallsvs, sat_all)
@@ -166,7 +170,7 @@ def fAnalyza():
 
                             sattelite = poloha_druzice.fvypocet_poloha(navvalues[j], Dt)  # vypocet polohy druzice
 
-                            azi, ele = utility.fComputeAziEle(stanice[c][0], [sattelite[0], sattelite[1], sattelite[2]])   # vypocet elevacneho uhla, azimutu
+                            azi, ele = fComputeAziEle(stanice[c][0], [sattelite[0], sattelite[1], sattelite[2]])   # vypocet elevacneho uhla, azimutu
 
                             # zobrazenie podkladovych map je v WGS 84 Web Mercator (EPSG:3857) tj. suradnice su prepocitane tiez a
                             # tym musi byt aj azimut prepocitany

@@ -3,6 +3,7 @@ from input_data import *
 from azi_ele_coor import *
 import ogr
 import sys
+import numpy as np
 
 try:
     import psycopg2
@@ -103,7 +104,8 @@ def fFresnelZ(azi, ele):
         plt.plot(elipsa_list[0][0], elipsa_list[0][1], 'r', label='ele uhol'+str(ele[0]))
         plt.plot(elipsa_list[1][0], elipsa_list[1][1], 'g', label='ele uhol'+str(ele[0]))
         plt.plot(elipsa_list[2][0], elipsa_list[2][1], 'b', label='ele uhol'+str(ele[0]))
-        plt.show()
+        plt.savefig(cesta_vystup + stanice[c][4] + '_FresnelZone.png')
+        #plt.show()
 
         workbook.close()
         c = c+1

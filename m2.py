@@ -70,6 +70,7 @@ try:
             rok = prva_obs[0][2:]
             navfile = nav_path + f.split('.')[0] + '.' + rok + 'n'
             if not os.path.exists(navfile):
+                print 'ziadne navigacne data'
                 continue
             # else: continue
 
@@ -134,7 +135,7 @@ try:
 
                             sattelite = poloha_druzice.fvypocet_poloha(navvalues[j], Dt)  # vypocet polohy druzice
 
-                            azi, ele = reader.fComputeAziEle(stanice[c][0], [sattelite[0], sattelite[1], sattelite[2]])   # vypocet elevacneho uhla, azimutu
+                            azi, ele = fComputeAziEle(stanice[c][0], [sattelite[0], sattelite[1], sattelite[2]])   # vypocet elevacneho uhla, azimutu
 
                             # zobrazenie podkladovych map je v WGS 84 Web Mercator (EPSG:3857) tj. suradnice su prepocitane tiez a
                             # tym musi byt aj azimut prepocitany
@@ -160,7 +161,6 @@ try:
                                 signals2.append(m.pow(10, float(i[indexS2]) / 20))
                                 signals5.append(m.pow(10, float(i[indexS5]) / 20))
 
-                print len(sinele)
                 if len(sinele) < pocet_observacii:            # filter poctu observacii
                     print "pre ", sat, " malo observacii - vypocet neprebehne", len(sinele)
                     continue
@@ -290,7 +290,10 @@ try:
                             print sys.exc_info()[1]
                             print "nepodarilo sa importovat ani jednu kniznicu potrebnu pre vypocet. Konec!"
 
-                    # print alt_prob[ind2S1], alt_prob[ind2S2], alt_prob[ind2S5]
+                    if sat in satellites_S5:
+                        print alt_prob[ind2S1], alt_prob[ind2S2], alt_prob[ind2S5]
+
+                    print alt_prob[ind2S1], alt_prob[ind2S2]
 
                     vyska1.append(alt_prob[ind2S1])
                     doy_list1.append(dat)
@@ -316,6 +319,7 @@ try:
 
         if len(doy_list1) == 0:
             print 'Ziadny vypocet vysky. Skontroluj data'
+            os.system("pause")
             sys.exit()
         # priemer vysok
         mean1 = np.mean(vyska1)

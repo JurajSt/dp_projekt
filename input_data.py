@@ -10,7 +10,7 @@ DB = "host=" + hostname + " user=" + username + " password=" + password + " dbna
 nav_path = 'D:/diplomka/dp_projekt/data/test/navig/'#'D:/diplomka/dp_projekt/data/bordel/test/navig/'
 obs_path = 'D:/diplomka/dp_projekt/data/test/obs/'  # 'D:/diplomka/telg_2/'
 eph_path = 'D:/diplomka/dp_projekt/data/test/eph/'  # igr18644.sp3'
-csvpath = 'data/SHMU/HOEFN_15_16.csv'
+csvpath = 'D:/diplomka/dp_projekt/data/SHMU/HOEFN_15_16.csv'
 
 
 # datum zaciatku a konca vypoctu
@@ -21,11 +21,13 @@ rok_konec, mes_konec, den_konec = 2017, 3, 10
 #nazovStanice = [[x,y,z], [elev. uhol od-do], [azimut od-do], referencna_vyska_stanice, nazov_stanice_rinex, nazov_meteostanice]
 # pozn. suradnice vo WGS84, azimuta elev. uhol v stupnoch. Ak neznami azimut tak prazdny seznam,
 # azimut zadavany podla wgs84 web mercator!!!
+suradnice_vstup = 'xyz' # alebo 'blh'  tj zemepisne suradnice
 kame = [[3892532.358, 1572220.333, 4785952.565], [5,25], [50, 80], 1.6, 'kame', 'Kamenica nad Cirochou']
 telg = [[3947396.223, 1451396.020, 4780197.834], [5,30], [190, 220], 1.6, 'telg', 'Telgart']
 hofn = [[2679690.298, -727951.336, 5722789.244], [5,25], [110, 150], 4.45, 'hofn', 'Hoefn']
 ganp = [[3929181.9, 1455236.5, 4793653.8]]
 
+# zoznam stanice musi obsahovat vsetky stanice, pre ktore sama vykonat analyza, musia byt vyplnene parametre ostanici aby bolo mozne analyzu spravit
 stanice = [hofn]
 # odhadovana vyska anteny xx, yy, zz>> min a max vyska a krok v metroch
 vyska_min = 1
@@ -45,7 +47,7 @@ pocet_observacii = 70  # minimalny pocet observacii pre analyzu
 platnos_spravy = 7200           #7200 sekund = 2 hodiny
 
 # data potrebne k ulozeniu a analyze
-analyza1 = 'a'   # a = urobit analyzu pre vyber druzice, n = bez analyzy. Pri jednosekundovych datach bude cas vypoctu pre analyzu dlhsi.
+analyza1 = 'n'   # a = urobit analyzu pre vyber druzice, n = bez analyzy. Pri jednosekundovych datach bude cas vypoctu pre analyzu dlhsi.
 ulozenie = 'csv'   # ulozenie db = do databaze, csv (xlsx) = do csv, xlsx musi byt zadana aj cesta!!!
 cesta_vystup = 'D:/diplomka/vystupcsv/'
 sursystem = 'xy' # xyz = pravouhle suradnice WGS84 , llh = zemepisne suradnice WGS84(epsg: 4326), xy = WGS84 web mercator (epsg: 3857)
