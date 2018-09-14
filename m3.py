@@ -88,7 +88,6 @@ try:
 
             del lines
 
-
             indexS1 = obstypes.index('S1') + 2
             indexS2 = obstypes.index('S2') + 2
             indexS5 = obstypes.index('S5') + 2

@@ -8,7 +8,7 @@ DB = "host=" + hostname + " user=" + username + " password=" + password + " dbna
 
 # cesty k suborom
 nav_path = 'D:/diplomka/dp_projekt/data/test/navig/'#'D:/diplomka/dp_projekt/data/bordel/test/navig/'
-obs_path = 'D:/diplomka/dp_projekt/data/test/obs/'  # 'D:/diplomka/telg_2/'
+obs_path = 'D:/diplomka/dp_projekt/data/test/obs/'  # type: str # 'D:/diplomka/telg_2/'
 eph_path = 'D:/diplomka/dp_projekt/data/test/eph/'  # igr18644.sp3'
 csvpath = 'D:/diplomka/dp_projekt/data/SHMU/HOEFN_15_16.csv'
 
